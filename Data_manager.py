@@ -4,33 +4,51 @@ import pandas as pd
 import shutil
 import matplotlib.pyplot as plt
 import cv2
+import random
+
 local = os.getcwd()
 print(local)
 
 
-def display_bounding_box(folder, df):
-    # Get the first row of the dataframe
-    row = df.sample(n=1).iloc[0]
+def display_bounding_boxes(folder, df, num_images=6):
+    # List all image files in the folder
+    image_files = [f for f in os.listdir(
+        folder) if f.endswith(('.png', '.jpg', '.jpeg'))]
 
-    # Read the image
-    img_path = os.path.join(folder, row['filename'])
-    img = cv2.imread(img_path)
-    h, w = img.shape[:2]
+    fig, axs = plt.subplots(3, 2, figsize=(10, 15))
 
-    # Calculate the actual bounding box coordinates
-    x_center, y_center, width, height = row['x_center'], row['y_center'], row['width'], row['height']
-    x1 = int((float(x_center)- float(width)/ 2) * w)
-    y1 = int((float(y_center)- float(height)/ 2) * h)
-    x2 = int((float(x_center)+ float(width)/ 2) * w)
-    y2 = int((float(y_center)+ float(height)/ 2) * h)
+    for i in range(num_images):
+        # Select a random image file
+        filename = random.choice(image_files)
 
-    # Draw the bounding box on the image
-    cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        # Get the row in the dataframe for the selected image
+        row = df[df['filename'] == filename]
+        if row.empty:
+            print(f'No data for image: {filename}')
+            continue
+        row = row.iloc[0]
 
-    # Display the image
-    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        # Read the image
+        img_path = os.path.join(folder, filename)
+        img = cv2.imread(img_path)
+        h, w = img.shape[:2]
+
+        # Calculate the actual bounding box coordinates
+        x_center, y_center, width, height = row['x_center'], row['y_center'], row['width'], row['height']
+        x1 = int((float(x_center) - float(width) / 2) * w)
+        y1 = int((float(y_center) - float(height) / 2) * h)
+        x2 = int((float(x_center) + float(width) / 2) * w)
+        y2 = int((float(y_center) + float(height) / 2) * h)
+
+        # Draw the bounding box on the image
+        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+        # Display the image
+        axs[i//2, i % 2].imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        axs[i//2, i % 2].axis('off')
+
+    plt.tight_layout()
     plt.show()
-
 #---------------------------------Diferenciate labeled and unlabeled images---------------------------------#
 txt_dir = os.path.join(local, 'DatasetArandanos', 'data', 'frames_totales')
 # Define the path to the directory containing the .txt files
@@ -63,10 +81,10 @@ for filename in os.listdir(txt_dir):
             # Create a dictionary with the data
             file_dict = {
                 "filename": filename.replace(".txt", ".jpg"),
-                "x_center": x1,
-                "y_center": x2,
-                "width": y1,
-                "height": y2,
+                "x_center": (float(x1)+float(x2))/2,
+                "y_center": (float(y1)+float(y2))/2,
+                "width": float(x2)-float(x1),
+                "height": float(y2)-float(y1),
                 "class": class_label
             }
                     
@@ -98,4 +116,3 @@ for filename in os.listdir(txt_dir):
             # Copy the file to the unlabeled directory
             shutil.copy(os.path.join(txt_dir, filename), unlabeled_dir)
             
-display_bounding_box(labeled_dir, df)

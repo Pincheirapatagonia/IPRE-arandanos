@@ -163,6 +163,8 @@ def process_images(l_folder, img_folder):
                             items[2] = str(1 - float(items[2]))
                         f.write(' '.join(items))
 
+#---------------------------------Main---------------------------------#
+
 if __name__ == '__main__':
     local = os.getcwd()
     
