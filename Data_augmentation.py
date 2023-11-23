@@ -102,7 +102,7 @@ def labeler(folder, df, df2=None):
     images = os.listdir(folder)
     if df2 is None:
         df2 = pd.DataFrame(
-            columns=['filename', 'class', 'x_center', 'y_center', 'width', 'height'])
+            columns=['filename', 'class', 'x1', 'y1', 'x2', 'y2'])
     for image_name in images:
         img_path = os.path.join(folder, image_name)
         img = cv2.imread(img_path)
@@ -132,13 +132,13 @@ def labeler(folder, df, df2=None):
             y_center = 1 - y_center
 
         # Calculate the actual bounding box coordinates
-        x_center = int((float(x_center) - float(width) / 2) * w)
-        y_center = int((float(y_center) - float(height) / 2) * h)
-        width = int((float(x_center) + float(width) / 2) * w)
-        height = int((float(y_center) + float(height) / 2) * h)
+        x1 = int((float(x_center) - float(width) / 2) * w)
+        y1 = int((float(y_center) - float(height) / 2) * h)
+        x2 = int((float(x_center) + float(width) / 2) * w)
+        y2 = int((float(y_center) + float(height) / 2) * h)
 
-        df2 = df2._append({'filename': image_name, 'class': row['class'], 'x_center': x_center,
-                         'y_center': y_center, 'width': width, 'height': height}, ignore_index=True)
+        df2 = df2._append({'filename': image_name, 'class': row['class'], 'x1': x1,
+                         'y1': y1, 'x2': x2, 'y2': y2}, ignore_index=True)
     return df2
 
 
@@ -205,7 +205,8 @@ if __name__ == '__main__':
 
     #---------------------------------Create new CSV files---------------------------------#
     print("Creando CSV\n")
-    df = pd.read_csv(os.path.join(local, 'DatasetArandanos', 'data', 'labeled_images.csv'))
+    df = pd.read_csv(os.path.join(local, 'DatasetArandanos',
+                     'data', 'raw_labeled_images.csv'))
     
     df2 = labeler(img_train_dir, df)
     

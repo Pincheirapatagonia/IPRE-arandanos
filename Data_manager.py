@@ -83,8 +83,8 @@ for filename in os.listdir(txt_dir):
                 "filename": filename.replace(".txt", ".jpg"),
                 "x_center": (float(x1)+float(x2))/2,
                 "y_center": (float(y1)+float(y2))/2,
-                "width": float(x2)-float(x1),
-                "height": float(y2)-float(y1),
+                "width": abs(float(x2)-float(x1)),
+                "height": abs(float(y2)-float(y1)),
                 "class": class_label
             }
                     
