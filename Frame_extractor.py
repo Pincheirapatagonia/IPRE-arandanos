@@ -2,7 +2,7 @@ import os
 import cv2
 
 
-def extract_frames(fps, single_video, input_path):
+def extract_frames(fps, single_video, input_path, output_path):
     # If the input is a single video file
     if single_video:
         video_files = [input_path]
@@ -29,7 +29,8 @@ def extract_frames(fps, single_video, input_path):
                 # If the current frame number is a multiple of the frame rate to extract
                 if frame_num % fps == 0:
                     # Save the frame as an image
-                    cv2.imwrite(f'{video_file}_frame{frame_num}.jpg', frame)
+                    output_file = os.path.join(output_path, f'{os.path.basename(video_file)}_frame{frame_num}.jpg')
+                    cv2.imwrite(output_file, frame)
 
                 # Increment the current frame number
                 frame_num += 1
@@ -40,6 +41,3 @@ def extract_frames(fps, single_video, input_path):
         # Release the video file
         video.release()
 
-
-# Call the function
-extract_frames(30, False, '/path/to/your/video/directory')
