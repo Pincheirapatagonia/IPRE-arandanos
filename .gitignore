@@ -1,0 +1,8 @@
+/Videos/*
+*.zip
+*.tar.gz
+*.mp4
+*.avi
+*jpg
+*.png
+*.jpeg
