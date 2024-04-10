@@ -75,16 +75,19 @@ def abcd2xywh(abcd):
     output[3] = height
     return output
 
-def getDepthValue_fromCloud(point_cloud, x, y):
-    err, point_cloud_value = point_cloud.get_value(x, y)
-    if math.isfinite(point_cloud_value[2]):
-        distance = math.sqrt(point_cloud_value[0] * point_cloud_value[0] +
-                             point_cloud_value[1] * point_cloud_value[1] +
-                             point_cloud_value[2] * point_cloud_value[2])
-        print(f"Distance to Camera at {{{x};{y}}}: {distance} with point cloud")
-        return distance
-    else:
-        return None
+def getDepthValue_fromCloud(point_cloud, x, y, n):
+   
+    min_z = float('inf')
+    for i in range(x-n, x+n+1):
+        for j in range(y-n, y+n+1):
+            err, point_cloud_value = point_cloud.get_value(x, y)
+            if math.isfinite(point_cloud_value[2]):
+                distance = point_cloud_value[2]
+                if distance != 0 and distance < min_z:
+                    min_z = distance
+    print(
+        f"Distance to Camera at {{{x};{y}}}: {point_cloud_value[2]} with point cloud")
+    return min_z
 
 
 def getMinDepthValue_fromDepth(depth, x, y, n): # Profundidad con un threshold de n pixeles
@@ -94,8 +97,7 @@ def getMinDepthValue_fromDepth(depth, x, y, n): # Profundidad con un threshold d
             z = depth.get_value(i, j)[1]
             if z != 0 and z < min_z:
                 min_z = z
-    print(
-        f"Minimum non-zero distance to Camera around {{{x};{y}}} with threshold {n}: {min_z}")
+    print(f"Minimum non-zero distance to Camera around {{{x};{y}}} with threshold {n}: {min_z}")
     return min_z
 
 def torch_thread(weights, img_size, conf_thres=0.2, iou_thres=0.45):
@@ -117,9 +119,8 @@ def torch_thread(weights, img_size, conf_thres=0.2, iou_thres=0.45):
             detections = detections_to_custom_box(det, image_net)
             if len(det) > 0:
                 xywh= det[0].xywh[0]
-                z = getMinDepthValue_fromDepth(
-                    depth, int(xywh[0]), int(xywh[1]),25)
-                z2 = getDepthValue_fromCloud(point_cloud, int(xywh[0]), int(xywh[1]))
+                #z = getMinDepthValue_fromDepth(depth, int(xywh[0]), int(xywh[1]),25)
+                z2 = getDepthValue_fromCloud(point_cloud, int(xywh[0]), int(xywh[1]),25)
             lock.release()
             run_signal = False
         sleep(0.01)
