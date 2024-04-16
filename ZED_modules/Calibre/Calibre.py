@@ -32,6 +32,13 @@ class BlueberryTracker:
         self.objX = resolution[0]/2
         self.objY = resolution[1]
         self.box = [0, 0, 0, 0]
+        self.Zref = 50 #cm
+        self.Rref = 0
+        self.R = 0
+        self.Z = 0
+        self.calibrating= True
+        self.conf = 0.2
+        
         
     def initiateVideo(self):
         print("Initiating video.")
@@ -44,12 +51,36 @@ class BlueberryTracker:
             time.sleep(1)
             print("Video initiated.")
             
-    
+    def calibrate(self, model):
+        while self.calibrating:
+            ret, self.frame = self.camera.read()
+            if not ret:
+                break
+            if self.show:
+                self.predict_frames(model)
+                self.frame = cv2.resize(self.frame, None, fx=2, fy=2)
+                cv2.imshow("Frame", self.frame)
+                if self.R != 0 and self.R != None:
+                    self.Rref = self.R
+                    print(f"Rref: {self.Rref}")
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                
+                self.calibrating = False
+                print(f"Calibration finished. Rref: {self.Rref}")
+                cv2.destroyAllWindows()
+                break
+        
+        
+    def det_z(self):
+        if self.R != 0 and self.R != None:
+            self.Z = (self.Zref*self.Rref)/self.R
             
+            print(f"Z: {self.Z}, R: {self.R}, Zref: {self.Zref}, Rref: {self.Rref}")
+         
     def predict_frames(self, model):
         image = self.frame
         with torch.no_grad():
-            predictions = model(image)
+            predictions = model(image, verbose=False, conf=self.conf)
         for result in predictions:
             result_bboxes = result.boxes
             for result_bbox in result_bboxes:
@@ -86,11 +117,16 @@ class BlueberryTracker:
             cv2.drawContours(self.frame, [max_contour], -1, (0, 0, 255), 2)
 
             area = cv2.contourArea(max_contour)
-            cv2.putText(self.frame, f'Area: {area}, Radio: {radius}',
+            self.R = radius
+            
+            if self.Rref != 0 and self.Rref != None:
+                self.det_z()
+                
+            cv2.putText(self.frame, f'Area: {area}, Radio: {radius}, Z: {np.round(self.Z)} cm',
                         (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         if area != None and radius != None: 
-            print(f"Area: {area}, Diameter: {radius*2}")
-
+            #print(f"Area: {area}, Diameter: {radius*2}, Z: {self.Z}cm")
+            pass
 
     def do(self, model):
         while not self.stopped:
@@ -99,9 +135,10 @@ class BlueberryTracker:
                 break
             if self.show:
                 self.predict_frames(model)
+                self.frame = cv2.resize(self.frame, None, fx=2, fy=2)
                 cv2.imshow("Frame", self.frame)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord('s'):
                 self.tracking = False
                 break
     def finish(self):
@@ -115,8 +152,11 @@ class BlueberryTracker:
 
 
 if __name__ == "__main__":
-    model = YOLO("ArandanosV1.pt")
+    model = YOLO("ArandanosV2.pt")
     tracker = BlueberryTracker()
     tracker.initiateVideo()
-    tracker.do(model)
-    tracker.finish()
+    tracker.calibrate(model)
+    if tracker.calibrating == False:
+        print("Calibration finished.")
+        tracker.do(model)
+        tracker.finish()
