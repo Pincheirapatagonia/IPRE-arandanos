@@ -100,6 +100,8 @@ def getMinDepthValue_fromDepth(depth, x, y, n): # Profundidad con un threshold d
     print(f"Minimum non-zero distance to Camera around {{{x};{y}}} with threshold {n}: {min_z}")
     return min_z
 
+
+
 def torch_thread(weights, img_size, conf_thres=0.2, iou_thres=0.45):
     global image_net, exit_signal, run_signal, detections, depth, point_cloud
 
@@ -120,6 +122,7 @@ def torch_thread(weights, img_size, conf_thres=0.2, iou_thres=0.45):
             if len(det) > 0:
                 xywh= det[0].xywh[0]
                 #z = getMinDepthValue_fromDepth(depth, int(xywh[0]), int(xywh[1]),25)
+
                 z2 = getDepthValue_fromCloud(point_cloud, int(xywh[0]), int(xywh[1]),25)
             lock.release()
             run_signal = False
