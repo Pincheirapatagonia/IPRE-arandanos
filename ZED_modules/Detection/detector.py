@@ -76,15 +76,20 @@ def abcd2xywh(abcd):
     return output
 
 def getDepthValue_fromCloud(point_cloud, x, y, n):
-   
+    
+    prom_list = []
+    
+            
     min_z = float('inf')
     for i in range(x-n, x+n+1):
         for j in range(y-n, y+n+1):
             err, point_cloud_value = point_cloud.get_value(x, y)
             if math.isfinite(point_cloud_value[2]):
                 distance = point_cloud_value[2]
+                prom_list.append(distance)
                 if distance != 0 and distance < min_z:
                     min_z = distance
+    print("Valor promedio : " + str(np.array(prom_list).mean()))
     print(
         f"Distance to Camera at {{{x};{y}}}: {point_cloud_value[2]} with point cloud")
     return min_z
@@ -100,15 +105,13 @@ def getMinDepthValue_fromDepth(depth, x, y, n): # Profundidad con un threshold d
     print(f"Minimum non-zero distance to Camera around {{{x};{y}}} with threshold {n}: {min_z}")
     return min_z
 
-
-
 def torch_thread(weights, img_size, conf_thres=0.2, iou_thres=0.45):
     global image_net, exit_signal, run_signal, detections, depth, point_cloud
 
     print("Intializing Network...")
 
     model = YOLO(weights)
-
+    
     while not exit_signal:
         if run_signal:
             lock.acquire()
@@ -122,8 +125,10 @@ def torch_thread(weights, img_size, conf_thres=0.2, iou_thres=0.45):
             if len(det) > 0:
                 xywh= det[0].xywh[0]
                 #z = getMinDepthValue_fromDepth(depth, int(xywh[0]), int(xywh[1]),25)
+                z2 = getDepthValue_fromCloud(point_cloud, int(xywh[0]), int(xywh[1]),200)
 
-                z2 = getDepthValue_fromCloud(point_cloud, int(xywh[0]), int(xywh[1]),25)
+                
+                
             lock.release()
             run_signal = False
         sleep(0.01)
@@ -147,7 +152,7 @@ def main():
     init_params = sl.InitParameters(input_t=input_type, svo_real_time_mode=True)
     init_params.coordinate_units = sl.UNIT.METER
     init_params.depth_mode = sl.DEPTH_MODE.ULTRA  # QUALITY
-    init_params.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP
+    #init_params.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP
     init_params.depth_maximum_distance = 50
 
     runtime_params = sl.RuntimeParameters()

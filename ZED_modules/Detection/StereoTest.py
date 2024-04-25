@@ -125,8 +125,10 @@ class StereoCamera():
         self.camera_baseline = calibration_params.get_camera_baseline() # ESTA EN MILIMETROS
         
         self.runtime_params = sl.RuntimeParameters()
+        
         positional_tracking_parameters = sl.PositionalTrackingParameters()
         self.zed.enable_positional_tracking(positional_tracking_parameters)
+        
         obj_param = sl.ObjectDetectionParameters()
         obj_param.detection_model = sl.OBJECT_DETECTION_MODEL.CUSTOM_BOX_OBJECTS
         obj_param.enable_tracking = True
@@ -295,7 +297,7 @@ class StereoCamera():
             
     
 if __name__ == '__main__':
-    YOLO_file_path = 'ArandanosV2.pt'
+    YOLO_file_path = 'ArandanosV1.pt'
     confidence_thresh = 0.1
     
     
